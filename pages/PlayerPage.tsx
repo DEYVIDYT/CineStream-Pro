@@ -33,6 +33,10 @@ const PlayerPage: React.FC = () => {
     const location = useLocation();
     const navigate = useNavigate();
     const searchParams = new URLSearchParams(location.search);
+
+    useEffect(() => {
+        console.log("PlayerPage mounted/updated. Current playerType from context:", playerType);
+    }, [playerType]);
     const episodeId = searchParams.get('ep'); // for series
 
     const [isControlsVisible, setIsControlsVisible] = useState(true);
@@ -95,14 +99,16 @@ const PlayerPage: React.FC = () => {
         streamUrl = `${server}/series/${username}/${password}/${episodeId}.mp4`;
     }
 
-    const PlayerComponent = playerType === 'secondary' ? SecondaryVideoPlayer : DefaultVideoPlayer;
+    // const PlayerComponent = playerType === 'secondary' ? SecondaryVideoPlayer : DefaultVideoPlayer; // Removed this line
 
     return (
         <div className="relative w-screen h-screen bg-black">
             {isControlsVisible && <FocusableBackButton />}
             <Suspense fallback={<div className="w-full h-full flex items-center justify-center"><LoadingSpinner /></div>}>
                 {streamUrl ? (
-                    <PlayerComponent src={streamUrl} />
+                    playerType === 'secondary' ?
+                        <SecondaryVideoPlayer key="secondary-player" src={streamUrl} /> :
+                        <DefaultVideoPlayer key="default-player" src={streamUrl} />
                 ) : (
                     <div className="w-full h-full flex items-center justify-center"><LoadingSpinner/></div>
                 )}
