@@ -12,6 +12,7 @@ import TVApp from './TVApp';
 import PlatformSelectionPage from './pages/PlatformSelectionPage';
 import { FocusProvider } from './components/tv/FocusManager';
 import { TvLayoutProvider } from './contexts/TvLayoutContext';
+import { PlayerProvider } from './contexts/PlayerContext';
 
 const MobileApp: React.FC = () => {
     const location = useLocation();
@@ -67,9 +68,11 @@ const AppContent: React.FC = () => {
 const App: React.FC = () => {
   return (
     <ApiProvider>
-      <HashRouter>
-        <AppContent />
-      </HashRouter>
+      <PlayerProvider>
+        <HashRouter>
+          <AppContent />
+        </HashRouter>
+      </PlayerProvider>
     </ApiProvider>
   );
 };

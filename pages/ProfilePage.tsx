@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect, useContext } from 'react';
 import { LoadingSpinner } from '../components/common/LoadingSpinner';
 import { useFocusable, FocusContext } from '../components/tv/FocusManager';
+import { usePlayer } from '../contexts/PlayerContext';
 
 const TelegramIcon = ({ className }: { className?: string }) => (
     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24" fill="currentColor" stroke="none" className={className}>
@@ -168,6 +169,7 @@ const AddListDialog: React.FC<AddListDialogProps> = ({ isOpen, onClose, onSubmit
 const ProfilePage: React.FC = () => {
   const [copyButtonText, setCopyButtonText] = useState('Copiar Lista IPTV');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const { playerType, togglePlayerType } = usePlayer();
 
     const handleCopyClick = () => {
         const listUrl = 'http://mybrasiltv.x10.mx/stream.php';
@@ -267,6 +269,14 @@ const ProfilePage: React.FC = () => {
           >
               <CopyIcon className="mr-2 h-5 w-5" />
               <span>{copyButtonText}</span>
+          </FocusableButton>
+          <FocusableButton
+              onClick={togglePlayerType}
+              className="w-full flex items-center justify-center bg-surface text-on-surface font-bold py-3 rounded-lg hover:bg-white/10 transition-colors"
+          >
+              {/* Placeholder for a player icon, if available */}
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2 h-5 w-5"><rect x="2" y="7" width="20" height="15" rx="2" ry="2"></rect><polyline points="17 2 12 7 7 2"></polyline></svg>
+              <span>Player: {playerType === 'default' ? 'Padrão' : 'Secundário'}</span>
           </FocusableButton>
         </div>
 

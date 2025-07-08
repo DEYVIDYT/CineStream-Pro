@@ -1,9 +1,14 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, lazy, Suspense } from 'react';
 import { useParams, useLocation, useNavigate } from 'react-router-dom';
 import { useApi } from '../services/ApiContext';
 import { LoadingSpinner } from '../components/common/LoadingSpinner';
-import VideoPlayer from '../components/common/VideoPlayer';
+import { usePlayer } from '../contexts/PlayerContext';
+// import VideoPlayer from '../components/common/VideoPlayer'; // Will be loaded conditionally
 import { useFocusable } from '../components/tv/FocusManager';
+
+// Lazy load players
+const DefaultVideoPlayer = lazy(() => import('../components/common/VideoPlayer'));
+const SecondaryVideoPlayer = lazy(() => import('../player/components/VideoPlayer'));
 
 const FocusableBackButton: React.FC = () => {
     const navigate = useNavigate();
@@ -24,6 +29,7 @@ const FocusableBackButton: React.FC = () => {
 const PlayerPage: React.FC = () => {
     const { type, id } = useParams<{ type: 'live' | 'movie' | 'series', id: string }>();
     const { credentials } = useApi();
+    const { playerType } = usePlayer();
     const location = useLocation();
     const navigate = useNavigate();
     const searchParams = new URLSearchParams(location.search);
@@ -89,10 +95,18 @@ const PlayerPage: React.FC = () => {
         streamUrl = `${server}/series/${username}/${password}/${episodeId}.mp4`;
     }
 
+    const PlayerComponent = playerType === 'secondary' ? SecondaryVideoPlayer : DefaultVideoPlayer;
+
     return (
         <div className="relative w-screen h-screen bg-black">
             {isControlsVisible && <FocusableBackButton />}
-            {streamUrl ? <VideoPlayer src={streamUrl} /> : <div className="w-full h-full flex items-center justify-center"><LoadingSpinner/></div>}
+            <Suspense fallback={<div className="w-full h-full flex items-center justify-center"><LoadingSpinner /></div>}>
+                {streamUrl ? (
+                    <PlayerComponent src={streamUrl} />
+                ) : (
+                    <div className="w-full h-full flex items-center justify-center"><LoadingSpinner/></div>
+                )}
+            </Suspense>
         </div>
     );
 };
