@@ -1,0 +1,6 @@
+{
+  "name": "Advanced Video Player",
+  "description": "A modern, anti-stuttering video player built with React, TypeScript, and Tailwind CSS, using HLS.js for optimized streaming performance. It features a sleek, intuitive UI with custom controls for a superior viewing experience.",
+  "requestFramePermissions": [],
+  "prompt": ""
+}
