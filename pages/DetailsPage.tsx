@@ -68,21 +68,39 @@ const DetailsPage: React.FC = () => {
         const fetchDetails = async () => {
             if (!api || !type || !id) return;
             setLoading(true);
-            setSelectedSeason(null);
+            setSelectedSeason(null); // Reset antes de nova busca
             try {
                 let data;
                 if (type === 'movie') {
                     data = await api.getVodInfo(id);
-                } else {
+                } else { // type === 'series'
                     data = await api.getSeriesInfo(id);
-                    if (data && 'episodes' in data && data.seasons) {
-                        const firstSeasonWithEpisodes = data.seasons.find(s => data.episodes && data.episodes[s.season_number] && data.episodes[s.season_number].length > 0);
-                        if (firstSeasonWithEpisodes) {
-                            setSelectedSeason(String(firstSeasonWithEpisodes.season_number));
+                    if (data && 'episodes' in data) { // Garantir que é SeriesInfo
+                        const seriesData = data as SeriesInfo; // Type assertion
+                        if (seriesData.seasons && seriesData.seasons.length > 0) {
+                            // Priorizar a primeira temporada listada em `seriesData.seasons`
+                            // que também tem uma entrada correspondente em `seriesData.episodes`.
+                            const validSeasonFromList = seriesData.seasons.find(s =>
+                                seriesData.episodes &&
+                                seriesData.episodes[s.season_number] &&
+                                seriesData.episodes[s.season_number].length > 0
+                            );
+                            if (validSeasonFromList) {
+                                setSelectedSeason(String(validSeasonFromList.season_number));
+                            } else {
+                                // Fallback: Se nenhuma temporada da lista `seasons` tem episódios
+                                // ou se `seasons` estiver vazio, tentar usar a primeira chave de `episodes`.
+                                const episodeSeasonKeys = Object.keys(seriesData.episodes || {});
+                                if (episodeSeasonKeys.length > 0) {
+                                    setSelectedSeason(episodeSeasonKeys[0]);
+                                }
+                            }
                         } else {
-                            const seasonKeys = Object.keys(data.episodes || {});
-                            if (seasonKeys.length > 0) {
-                                setSelectedSeason(seasonKeys[0]);
+                            // Fallback mais profundo: se `seriesData.seasons` estiver vazio,
+                            // mas `seriesData.episodes` tiver chaves.
+                            const episodeSeasonKeys = Object.keys(seriesData.episodes || {});
+                            if (episodeSeasonKeys.length > 0) {
+                                setSelectedSeason(episodeSeasonKeys[0]);
                             }
                         }
                     }
@@ -185,38 +203,53 @@ const DetailsPage: React.FC = () => {
                     </FocusableButton>
                 </div>
 
-                {type === 'series' && 'episodes' in details && details.seasons && Object.keys(details.episodes).length > 0 && (
+                {/* Seção de Temporadas e Episódios */}
+                {type === 'series' && details && 'episodes' in details && 'seasons' in details && (
                     <div className="mt-8">
                         <h2 className="text-lg font-bold text-on-surface mb-4">Episódios</h2>
                         
                         {/* Season Selector */}
-                        <div className="flex space-x-2 overflow-x-auto pb-2 mb-4 scrollbar-hide">
-                            {details.seasons
-                                .filter(season => details.episodes[season.season_number])
-                                .map(season => (
-                                    <FocusableButton
-                                        key={season.id}
-                                        onClick={() => setSelectedSeason(String(season.season_number))}
-                                        className={`px-4 py-2 rounded-lg text-sm font-semibold whitespace-nowrap transition-colors duration-200 ${
-                                            selectedSeason === String(season.season_number)
-                                                ? 'bg-primary text-on-primary'
-                                                : 'bg-surface text-on-surface-variant hover:bg-white/10'
-                                        }`}
-                                    >
-                                        {season.name}
-                                    </FocusableButton>
-                            ))}
-                        </div>
+                        {details.seasons && details.seasons.length > 0 ? (
+                            <div className="flex space-x-2 overflow-x-auto pb-2 mb-4 scrollbar-hide">
+                                {details.seasons
+                                    // Opcional: manter o filtro se quiser apenas mostrar temporadas com episódios,
+                                    // mas para robustez, podemos mostrar todas as temporadas retornadas pela API
+                                    // e a lista de episódios abaixo lidará se estiver vazia para uma temporada específica.
+                                    // .filter(season => details.episodes && details.episodes[season.season_number] && details.episodes[season.season_number].length > 0)
+                                    .map(season => (
+                                        <FocusableButton
+                                            key={season.id || season.season_number} // Usar season.id se disponível, fallback para season_number
+                                            onClick={() => setSelectedSeason(String(season.season_number))}
+                                            className={`px-4 py-2 rounded-lg text-sm font-semibold whitespace-nowrap transition-colors duration-200 ${
+                                                selectedSeason === String(season.season_number)
+                                                    ? 'bg-primary text-on-primary'
+                                                    : 'bg-surface text-on-surface-variant hover:bg-white/10'
+                                            }`}
+                                        >
+                                            {season.name || `Temporada ${season.season_number}`} {/* Fallback para nome da temporada */}
+                                        </FocusableButton>
+                                ))}
+                            </div>
+                        ) : (
+                            Object.keys(details.episodes || {}).length > 0 && (
+                                <p className="text-on-surface-variant text-sm mb-4">
+                                    Temporadas não listadas, mas episódios disponíveis. Selecionando a primeira disponível.
+                                    {/* Isso pode acontecer se a API retornar episódios agrupados por season_number
+                                        mas a lista `details.seasons` estiver vazia. A lógica de `selectedSeason`
+                                        já tenta pegar a primeira chave de `details.episodes` nesses casos. */}
+                                </p>
+                            )
+                        )}
 
                         {/* Episodes List */}
-                        {selectedSeason && details.episodes && details.episodes[selectedSeason] && details.episodes[selectedSeason].length > 0 && (
+                        {selectedSeason && details.episodes && details.episodes[selectedSeason] && details.episodes[selectedSeason].length > 0 ? (
                             <div className="space-y-3">
                                 {details.episodes[selectedSeason].map(ep => (
                                     <FocusableLink 
                                         to={`/player/series/${id}?ep=${ep.id}`} 
                                         key={ep.id} 
                                         className="flex items-center p-2 rounded-lg bg-surface hover:bg-white/10 transition-colors"
-                                        aria-label={`Reproduzir ${ep.title}`}
+                                        aria-label={`Reproduzir ${ep.title || `Episódio ${ep.episode_num}`}`}
                                     >
                                         <div className="w-28 h-16 bg-black rounded-md mr-4 flex-shrink-0 overflow-hidden">
                                             {ep.info.movie_image ? 
@@ -227,13 +260,29 @@ const DetailsPage: React.FC = () => {
                                             }
                                         </div>
                                         <div className="flex-grow">
-                                            <p className="font-semibold text-on-surface text-sm leading-tight">E{ep.episode_num}. {ep.title}</p>
-                                            <p className="text-xs text-on-surface-variant mt-1">{ep.info.duration}</p>
+                                            <p className="font-semibold text-on-surface text-sm leading-tight">
+                                                E{ep.episode_num}. {ep.title || `Episódio ${ep.episode_num}`} {/* Fallback para título */}
+                                            </p>
+                                            {ep.info.duration && <p className="text-xs text-on-surface-variant mt-1">{ep.info.duration}</p>}
                                         </div>
                                         <PlayIcon className="w-6 h-6 text-primary ml-2 flex-shrink-0"/>
                                     </FocusableLink>
                                 ))}
                             </div>
+                        ) : (
+                            selectedSeason && (details.episodes && (!details.episodes[selectedSeason] || details.episodes[selectedSeason].length === 0)) && (
+                                <p className="text-on-surface-variant text-sm">
+                                    Não há episódios disponíveis para a temporada selecionada.
+                                </p>
+                            )
+                        )}
+
+                        {/* Mensagem de fallback se nenhuma temporada ou episódio for encontrado, mas esperávamos */}
+                        {(!details.seasons || details.seasons.length === 0) &&
+                         (!details.episodes || Object.keys(details.episodes).length === 0) && (
+                            <p className="text-on-surface-variant text-sm">
+                                Informações de temporadas e episódios não disponíveis para esta série.
+                            </p>
                         )}
                     </div>
                 )}
