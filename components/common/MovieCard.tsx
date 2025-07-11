@@ -10,8 +10,17 @@ interface MovieCardProps {
 const MovieCard: React.FC<MovieCardProps> = ({ item }) => {
     const navigate = useNavigate();
     const type = item.stream_type === 'movie' ? 'movie' : 'series';
+
+    const handleNavigation = () => {
+      if (type === 'series') {
+        navigate(`/series/${item.stream_id}`);
+      } else {
+        navigate(`/details/${type}/${item.stream_id}`);
+      }
+    };
+
     const { ref, isFocused } = useFocusable<HTMLDivElement>({
-      onEnterPress: () => navigate(`/details/${type}/${item.stream_id}`)
+      onEnterPress: handleNavigation
     });
     
     const title = item.title || item.name;
@@ -21,7 +30,7 @@ const MovieCard: React.FC<MovieCardProps> = ({ item }) => {
         <div 
             ref={ref}
             tabIndex={-1}
-            onClick={() => navigate(`/details/${type}/${item.stream_id}`)}
+            onClick={handleNavigation}
             className={`flex-shrink-0 w-32 md:w-36 snap-start group relative transition-transform duration-200 ${isFocused ? 'focused' : ''}`}>
             <div className="overflow-hidden rounded-lg bg-surface shadow-lg">
                 <img 

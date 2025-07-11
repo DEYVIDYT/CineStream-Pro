@@ -2,7 +2,8 @@ import React from 'react';
 import { HashRouter, Routes, Route, useLocation } from 'react-router-dom';
 import HomePage from './pages/HomePage';
 import LiveTvPage from './pages/LiveTvPage';
-import DetailsPage from './pages/DetailsPage';
+import MovieDetailsPage from './pages/MovieDetailsPage'; // Renomeado de DetailsPage
+import SeriesDetailsPage from './pages/SeriesDetailsPage';
 import PlayerPage from './pages/PlayerPage';
 import BottomNav from './components/layout/BottomNav';
 import SearchPage from './pages/SearchPage';
@@ -22,8 +23,9 @@ const MobileApp: React.FC = () => {
                     <Route path="/live" element={<LiveTvPage />} />
                     <Route path="/search" element={<SearchPage />} />
                     <Route path="/profile" element={<ProfilePage />} />
-                    <Route path="/details/:type/:id" element={<DetailsPage />} />
-                    <Route path="/player/:type/:id" element={<PlayerPage />} />
+                    <Route path="/movie/:id" element={<MovieDetailsPage />} /> {/* Rota atualizada para filmes */}
+                    <Route path="/series/:id" element={<SeriesDetailsPage />} />
+                    <Route path="/player/:type/:id" element={<PlayerPage />} /> {/* PlayerPage ainda pode precisar do 'type' */}
                 </Routes>
             </main>
             {!noNavRoutes.some(path => location.pathname.startsWith(path)) && <BottomNav />}
