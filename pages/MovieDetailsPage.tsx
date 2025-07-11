@@ -86,7 +86,8 @@ const MovieDetailsPage: React.FC = () => { // Nome do componente atualizado
         return <div className="h-full flex items-center justify-center"><LoadingSpinner /></div>;
     }
 
-    if (!details) { // Se details for null e não estiver carregando (loading é false aqui)
+    // Adicionada verificação para details.info, semelhante à SeriesDetailsPage
+    if (!details || !details.info) {
         return (
             <div className="h-full flex flex-col items-center justify-center text-on-surface-variant p-4">
                 <BackButton />
